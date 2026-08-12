@@ -26,8 +26,7 @@ SECRET_KEY = 'django-insecure-+7!ls%jz*f^7^w%#ep1#r8gs%)g-hgimovaevv91y=#pfcl=f-
 DEBUG = True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
-
+AUTH_USER_MODEL = 'api.User'
 # Application definition
 
 INSTALLED_APPS = [
@@ -87,8 +86,16 @@ WSGI_APPLICATION = 'projet_full_stack_back.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'projet_back',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
     }
 }
 
@@ -116,11 +123,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
 LANGUAGE_CODE = 'fr-fr'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Europe/Paris'
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -133,11 +137,7 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
