@@ -4,7 +4,6 @@ from .models import (
     User, EleveProfile, FormateurProfile, CoursDonne
 )
 
-# 1. Serializers de base
 class FiliereSerializer(serializers.ModelSerializer):
     class Meta:
         model = Filiere
@@ -34,7 +33,6 @@ class PromotionSerializer(serializers.ModelSerializer):
         model = Promotion
         fields = '__all__'
 
-# 2. Utilisateurs et Profils
 class EleveProfileSerializer(serializers.ModelSerializer):
     promotion = PromotionSerializer(read_only=True)
     class Meta:

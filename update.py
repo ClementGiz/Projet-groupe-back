@@ -18,7 +18,7 @@ def run_command(command, description):
 
 def main():
     print("==========================================")
-    print(" Script de mise à jour du projet Django")
+    print(" Script de mise à jour du projet Django  ")
     print("==========================================")
 
     run_command(["git", "checkout", "main"], "Basculement sur la branche main")
