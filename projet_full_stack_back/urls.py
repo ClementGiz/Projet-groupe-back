@@ -15,11 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from api.views import DumpAllDataView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # Route globale de test
-    path('test-dump/', DumpAllDataView.as_view(), name='test-dump'),
+    path("api/", include("api.urls")),
 ]
