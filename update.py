@@ -76,7 +76,8 @@ def main():
         except subprocess.CalledProcessError :
             print("ATTENTION DES CONFLITS SONT DETECTES !")
             print("1. Réglez les conflits dans les fichiers marqués en rouge.")
-            print("2. Une fois réglé, si vous aviez des modifications non commit vous pouvez les récupérer avec la commande : git stash pop")
+            print("2. Une fois réglé, faite un commit")
+            print("3. Si vous aviez des modifications non commit vous pouvez les récupérer avec la commande : git stash pop")
 
     print("\nTout est à jour et prêt pour continuer!")
 
