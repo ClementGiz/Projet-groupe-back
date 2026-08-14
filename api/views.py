@@ -180,3 +180,107 @@ class EleveDetailView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+class FilieresView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filieres = Filiere.objects.all()
+        return Response(FiliereSerializer(filieres, many=True).data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = FiliereSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FiliereDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Filiere.objects.get(pk=pk)
+        except Filiere.DoesNotExist:
+            return None
+
+    def patch(self, request, pk):
+        filiere = self.get_object(pk)
+        if filiere is None:
+            return Response({"message": "Filière introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = FiliereSerializer(filiere, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CursusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cursus = Cursus.objects.select_related('filiere')
+        return Response(CursusSerializer(cursus, many=True).data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = CursusSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CursusDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Cursus.objects.get(pk=pk)
+        except Cursus.DoesNotExist:
+            return None
+
+    def patch(self, request, pk):
+        cursus = self.get_object(pk)
+        if cursus is None:
+            return Response({"message": "Cursus introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CursusSerializer(cursus, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PromotionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        promotions = Promotion.objects.select_related('filiere')
+        return Response(PromotionSerializer(promotions, many=True).data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = PromotionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PromotionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Promotion.objects.get(pk=pk)
+        except Promotion.DoesNotExist:
+            return None
+
+    def patch(self, request, pk):
+        promotion = self.get_object(pk)
+        if promotion is None:
+            return Response({"message": "Promotion introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = PromotionSerializer(promotion, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
