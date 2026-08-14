@@ -21,6 +21,10 @@ def main():
     print(" Script de mise à jour du projet Django  ")
     print("==========================================")
 
+    securite = input("Avez vous des fichiers non commit sur votre branche de travail ? o/n ")
+    if securite in ["o", "oui", "y", "yes"]:
+        run_command(["git", "stash"],"Mise en réserve des fichiers non commit")
+
     run_command(["git", "checkout", "main"], "Basculement sur la branche main")
     run_command(["git", "pull", "origin", "main"], "Récupération du dernier code")
 
@@ -43,20 +47,36 @@ def main():
         "Mise à jour des packages pip",
     )
 
-    run_command(
+    creation_db = input("Souhaitez vous relancer une création de base de donnée et la génération de données fictive ? o/n ")
+
+    if creation_db in ["o", "oui", "y", "yes"]:
+        run_command(
         [venv_python, "manage.py", "migrate"],
         "Application des migrations Django",
-    )
+        )
 
-    run_command(
+        run_command(
         [venv_python, "manage.py", "seed_db"],
         "Génération des données de tests"
-    )
+        )
 
-    name = input("Quel est le nom de la barnche sur laquelle vous voulez travailez ? ")
-    run_command(
-        f"git checkout -b {name}", "Création de la brache"
-    )
+    creation = input("Voulez-vous créer une nouvelle branche de travail ? o/n ")
+    name = input("Quel est le nom de la branche sur laquelle vous voulez travailler ? ")
+    if creation in ["o", "oui", "y", "yes"]:
+        run_command(
+        ["git", "checkout", "-b", name], "Création de la brache"
+        )
+    else :
+        run_command(["git", "checkout", name], "Retour sur la branche de travail")
+        try :
+            run_command(["git", "merge", "main"], "Intègration des mise à jour à la branche de travail")
+            print("La fusion des branches c'est déroulé sans soucis !")
+            if securite in ["o", "oui", "y", "yes"]:
+                run_command(["git", "stash", "pop"], "Restauration des modifications local")
+        except subprocess.CalledProcessError :
+            print("ATTENTION DES CONFLITS SONT DETECTES !")
+            print("1. Réglez les conflits dans les fichiers marqués en rouge.")
+            print("2. Une fois réglé, si vous aviez des modifications non commit vous pouvez les récupérer avec la commande : git stash pop")
 
     print("\nTout est à jour et prêt pour continuer!")
 
