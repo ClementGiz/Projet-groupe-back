@@ -131,24 +131,32 @@ class EleveDetailView(APIView):
         except User.DoesNotExist:
             return None
 
-    def get(self, request, pk):
+    class ElevesView(APIView):
 
-        eleve = self.get_object(pk)
+        permission_classes = [IsAuthenticated]
 
-        if eleve is None:
-            return Response(
-                {
-                    "message": "Élève introuvable."
-                },
-                status=status.HTTP_404_NOT_FOUND
+        def get(self, request):
+            eleves = User.objects.filter(
+                role=User.Role.ELEVE
+            ).select_related(
+                'eleve_profile',
+                'eleve_profile__promotion',
+                'eleve_profile__promotion__filiere'
             )
 
-        serializer = EleveSerializer(eleve)
+            promotion_id = request.query_params.get('promotion')
+            if promotion_id:
+                eleves = eleves.filter(eleve_profile__promotion_id=promotion_id)
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+            serializer = EleveSerializer(
+                eleves,
+                many=True
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
 
     def patch(self, request, pk):
 
