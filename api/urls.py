@@ -2,7 +2,7 @@ from django.urls import path
 
 from api.models import Cursus
 from api.views import LoginView, MeView, DumpAllDataView, ElevesView, EleveDetailView, FilieresView, FiliereDetailView, \
-    CursusView, CursusDetailView, PromotionsView, PromotionDetailView
+    CursusView, CursusDetailView, PromotionsView, PromotionDetailView, UserProfileView
 
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),

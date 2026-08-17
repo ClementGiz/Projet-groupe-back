@@ -157,32 +157,32 @@ class EleveDetailView(APIView):
             status=status.HTTP_200_OK
         )
 
-    class ElevesView(APIView):
+class ElevesView(APIView):
 
-        permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-        def get(self, request):
-            eleves = User.objects.filter(
-                role=User.Role.ELEVE
-            ).select_related(
-                'eleve_profile',
-                'eleve_profile__promotion',
-                'eleve_profile__promotion__filiere'
-            )
+    def get(self, request):
+        eleves = User.objects.filter(
+            role=User.Role.ELEVE
+        ).select_related(
+            'eleve_profile',
+            'eleve_profile__promotion',
+            'eleve_profile__promotion__filiere'
+        )
 
-            promotion_id = request.query_params.get('promotion')
-            if promotion_id:
-                eleves = eleves.filter(eleve_profile__promotion_id=promotion_id)
+        promotion_id = request.query_params.get('promotion')
+        if promotion_id:
+            eleves = eleves.filter(eleve_profile__promotion_id=promotion_id)
 
-            serializer = EleveSerializer(
-                eleves,
-                many=True
-            )
+        serializer = EleveSerializer(
+            eleves,
+            many=True
+        )
 
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
     def patch(self, request, pk):
 
