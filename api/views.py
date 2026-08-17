@@ -7,7 +7,7 @@ from . import serializers
 from .models import Filiere, Cours, Cursus, Promotion, User, CoursDonne
 from .serializers import (
     FiliereSerializer, CoursSerializer, CursusSerializer,
-    PromotionSerializer, UserSerializer, CoursDonneSerializer
+    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveProfileSerializer
 )
 
 class DumpAllDataView(APIView):
@@ -37,16 +37,7 @@ class UserProfileView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-<<<<<<< HEAD
     # PATCH /api/profile/me/ -> Mettre à jour partiellement le profil
-=======
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-    # Méthode patch pour traiter la modification des infos personnelles
 
     def patch(self, request):
         serializer = UserSerializer(
