@@ -79,3 +79,46 @@ class CoursDonneSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoursDonne
         fields = '__all__'
+
+class EleveSerializer(serializers.ModelSerializer):
+    eleve_profile = EleveProfileSerializer(read_only=True)
+
+    promotion_id = serializers.PrimaryKeyRelatedField(
+        queryset=Promotion.objects.all(),
+        source='eleve_profile.promotion',
+        write_only=True
+    )
+
+    class Meta:
+        model = User
+
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'eleve_profile',
+            'promotion_id',
+        ]
+
+        read_only_fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'eleve_profile',
+        ]
+
+class LoginUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+        ]
