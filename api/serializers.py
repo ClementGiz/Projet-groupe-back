@@ -54,6 +54,24 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'eleve_profile', 'formateur_profile']
 
+    # Cette méthode permet d'enregistrer proprement les modification de l'utilsateur en BDD
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+
+        # Met ) jour les champs dynamiquement
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Méthode set_password hache le mot de passe. Si le champ est laissé vide par utilsateur,password vaut None
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+
 class CoursDonneSerializer(serializers.ModelSerializer):
     formateur = FormateurProfileSerializer(read_only=True)
     promotion = PromotionSerializer(read_only=True)
