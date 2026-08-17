@@ -324,3 +324,30 @@ class PromotionDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PlanningView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # 1. Si l'utilisateur est un Élève -> Cours de sa promotion
+        if user.is_eleve and hasattr(user, 'eleve_profile'):
+            cours = CoursDonne.objects.filter(
+                promotion=user.eleve_profile.promotion
+            ).select_related('cours__cours', 'promotion', 'formateur__user')
+
+        # 2. Si l'utilisateur est un Formateur -> Cours qu'il dispense
+        elif user.is_formateur and hasattr(user, 'formateur_profile'):
+            cours = CoursDonne.objects.filter(
+                formateur=user.formateur_profile
+            ).select_related('cours__cours', 'promotion', 'formateur__user')
+
+        # 3. Admins / Référents -> Tous les cours planifiés
+        else:
+            cours = CoursDonne.objects.all().select_related('cours__cours', 'promotion', 'formateur__user')
+
+        serializer = CoursDonneSerializer(cours, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
