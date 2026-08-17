@@ -1,16 +1,18 @@
+import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 
+from . import serializers
 from .models import Filiere, Cours, Cursus, Promotion, User, CoursDonne
 from .serializers import (
-    FiliereSerializer, CoursSerializer, CursusSerializer,
-    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveSerializer, LoginUserSerializer
-)
+    FiliereSerializer, CoursSerializer, CursusSerializer, EleveProfileSerializer,
+    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveSerializer, LoginUserSerializer)
 
 class DumpAllDataView(APIView):
     """
@@ -29,6 +31,36 @@ class DumpAllDataView(APIView):
         }
         return Response(data)
 
+class UserProfileView(APIView):
+    """
+    Gestion du profil de l'utlisateur actuellement conncecté
+    """
+    permission_classes = [IsAuthenticated]
+
+    # GET /api/profile/me/ -> Récupère les données de l'utilsateur connecté
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    # PATCH /api/profile/me/ -> Mettre à jour partiellement le profil
+
+    def patch(self, request):
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class LoginView(APIView):
 
@@ -87,31 +119,6 @@ class MeView(APIView):
             status=status.HTTP_200_OK
         )
 
-class ElevesView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-
-        eleves = User.objects.filter(
-            role=User.Role.ELEVE
-        ).select_related(
-            'eleve_profile',
-            'eleve_profile__promotion',
-            'eleve_profile__promotion__filiere'
-        )
-
-        serializer = EleveSerializer(
-            eleves,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
 class EleveDetailView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -130,6 +137,25 @@ class EleveDetailView(APIView):
 
         except User.DoesNotExist:
             return None
+
+    def get(self, request, pk):
+
+        eleve = self.get_object(pk)
+
+        if eleve is None:
+            return Response(
+                {
+                    "message": "Élève introuvable."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = EleveSerializer(eleve)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
     class ElevesView(APIView):
 
@@ -283,11 +309,17 @@ class PromotionDetailView(APIView):
         except Promotion.DoesNotExist:
             return None
 
+
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+
+
     def patch(self, request, pk):
         promotion = self.get_object(pk)
         if promotion is None:
             return Response({"message": "Promotion introuvable."}, status=status.HTTP_404_NOT_FOUND)
         serializer = PromotionSerializer(promotion, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

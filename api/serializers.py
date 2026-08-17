@@ -54,6 +54,24 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'eleve_profile', 'formateur_profile']
 
+    # Cette méthode permet d'enregistrer proprement les modification de l'utilsateur en BDD
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+
+        # Met ) jour les champs dynamiquement
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Méthode set_password hache le mot de passe. Si le champ est laissé vide par utilsateur,password vaut None
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+
 class CoursDonneSerializer(serializers.ModelSerializer):
     formateur = FormateurProfileSerializer(read_only=True)
     promotion = PromotionSerializer(read_only=True)
@@ -61,3 +79,46 @@ class CoursDonneSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoursDonne
         fields = '__all__'
+
+class EleveSerializer(serializers.ModelSerializer):
+    eleve_profile = EleveProfileSerializer(read_only=True)
+
+    promotion_id = serializers.PrimaryKeyRelatedField(
+        queryset=Promotion.objects.all(),
+        source='eleve_profile.promotion',
+        write_only=True
+    )
+
+    class Meta:
+        model = User
+
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'eleve_profile',
+            'promotion_id',
+        ]
+
+        read_only_fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'eleve_profile',
+        ]
+
+class LoginUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+        ]
