@@ -217,7 +217,7 @@ class PromotionDetailView(APIView):
 
 
 class PromotionElevesView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:
