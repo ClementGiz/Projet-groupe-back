@@ -6,24 +6,16 @@ from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from . import serializers
-from .models import (
-    Filiere, Cours, Cursus, Promotion, User,
-    FormateurProfile, CoursDonne
-)
-from .permissions import IsAdminUserRole
+from .models import Filiere, Cours, Cursus, Promotion, User, CoursDonne, FormateurProfile
+from .permissions import IsAdminUserRole, IsFormateurRole, IsRefAdminRole
 from .serializers import (
-    FiliereSerializer, CoursSerializer, CursusSerializer, EleveProfileSerializer,
-    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveSerializer,
-    LoginUserSerializer, FormateurProfileSerializer, AdminUserManagementSerializer
-)
+    FiliereSerializer, CoursSerializer, CursusSerializer, EleveProfileSerializer, PromotionSerializer, UserSerializer,
+    CoursDonneSerializer, EleveSerializer, LoginUserSerializer, AdminUserManagementSerializer,
+    FormateurCourseSerializer, FormateurProfileSerializer, SimpleEleveSerializer)  # <-- Import ajouté
 
 
 class DumpAllDataView(APIView):
-    """
-    Route de TEST : Renvoie TOUTES les données de la base de données.
-    """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = {
@@ -38,192 +30,85 @@ class DumpAllDataView(APIView):
 
 
 class UserProfileView(APIView):
-    """
-    Gestion du profil de l'utlisateur actuellement conncecté
-    """
     permission_classes = [IsAuthenticated]
 
-    # GET /api/profile/me/ -> Récupère les données de l'utilsateur connecté
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # PATCH /api/profile/me/ -> Mettre à jour partiellement le profil
     def patch(self, request):
-        serializer = UserSerializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
-
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
-
         username = request.data.get("username")
         password = request.data.get("password")
-
         if not username or not password:
-            return Response(
-                {
-                    "message": "Username et password sont obligatoires."
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = authenticate(
-            username=username,
-            password=password
-        )
-
+            return Response({"message": "Username et password sont obligatoires."}, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(username=username, password=password)
         if user is None:
-            return Response(
-                {
-                    "message": "Identifiants incorrects."
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
+            return Response({"message": "Identifiants incorrects."}, status=status.HTTP_401_UNAUTHORIZED)
         token, created = Token.objects.get_or_create(user=user)
-
         user_serializer = LoginUserSerializer(user)
-
-        return Response(
-            {
-                "message": "Connexion réussie.",
-                "token": token.key,
-                "user": user_serializer.data
-            },
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": "Connexion réussie.", "token": token.key, "user": user_serializer.data},
+                        status=status.HTTP_200_OK)
 
 
 class MeView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         serializer = UserSerializer(request.user)
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class EleveDetailView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
-
         try:
-            return User.objects.select_related(
-                'eleve_profile',
-                'eleve_profile__promotion',
-                'eleve_profile__promotion__filiere'
-            ).get(
-                pk=pk,
-                role=User.Role.ELEVE
-            )
-
+            return User.objects.select_related('eleve_profile', 'eleve_profile__promotion',
+                                               'eleve_profile__promotion__filiere').get(pk=pk, role=User.Role.ELEVE)
         except User.DoesNotExist:
             return None
 
     def get(self, request, pk):
-
         eleve = self.get_object(pk)
-
         if eleve is None:
-            return Response(
-                {
-                    "message": "Élève introuvable."
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-
+            return Response({"message": "Élève introuvable."}, status=status.HTTP_404_NOT_FOUND)
         serializer = EleveSerializer(eleve)
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-
         eleve = self.get_object(pk)
-
         if eleve is None:
-            return Response(
-                {
-                    "message": "Élève introuvable."
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = EleveSerializer(
-            eleve,
-            data=request.data,
-            partial=True
-        )
-
+            return Response({"message": "Élève introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EleveSerializer(eleve, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ElevesView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        eleves = User.objects.filter(
-            role=User.Role.ELEVE
-        ).select_related(
-            'eleve_profile',
-            'eleve_profile__promotion',
-            'eleve_profile__promotion__filiere'
-        )
-
+        eleves = User.objects.filter(role=User.Role.ELEVE).select_related('eleve_profile', 'eleve_profile__promotion',
+                                                                          'eleve_profile__promotion__filiere')
         promotion_id = request.query_params.get('promotion')
         if promotion_id:
             eleves = eleves.filter(eleve_profile__promotion_id=promotion_id)
-
-        serializer = EleveSerializer(
-            eleves,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        serializer = EleveSerializer(eleves, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FilieresView(APIView):
@@ -325,14 +210,28 @@ class PromotionDetailView(APIView):
         if promotion is None:
             return Response({"message": "Promotion introuvable."}, status=status.HTTP_404_NOT_FOUND)
         serializer = PromotionSerializer(promotion, data=request.data, partial=True)
-
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# --- Formateurs (lecture seule, pour peupler les selects du planning) ---
+class PromotionElevesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            promotion = Promotion.objects.get(pk=pk)
+        except Promotion.DoesNotExist:
+            return Response({"message": "Promotion introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        profiles = promotion.eleves.select_related('user').all()
+
+        users = [profile.user for profile in profiles if profile.user.is_active]
+
+        serializer = SimpleEleveSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class FormateursView(APIView):
     permission_classes = [IsAuthenticated]
@@ -342,26 +241,19 @@ class FormateursView(APIView):
         return Response(FormateurProfileSerializer(formateurs, many=True).data, status=status.HTTP_200_OK)
 
 
-# --- Planning (CoursDonne) ---
-
 class CoursDonneView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         cours_donnes = CoursDonne.objects.select_related(
-            'formateur', 'formateur__user',
-            'promotion', 'promotion__filiere',
-            'cours', 'cours__cours', 'cours__cursus',
+            'formateur', 'formateur__user', 'promotion', 'promotion__filiere', 'cours', 'cours__cours', 'cours__cursus',
         )
-
         promotion_id = request.query_params.get('promotion')
         if promotion_id:
             cours_donnes = cours_donnes.filter(promotion_id=promotion_id)
-
         formateur_id = request.query_params.get('formateur')
         if formateur_id:
             cours_donnes = cours_donnes.filter(formateur_id=formateur_id)
-
         serializer = CoursDonneSerializer(cours_donnes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -378,11 +270,8 @@ class CoursDonneDetailView(APIView):
 
     def get_object(self, pk):
         try:
-            return CoursDonne.objects.select_related(
-                'formateur', 'formateur__user',
-                'promotion', 'promotion__filiere',
-                'cours', 'cours__cours', 'cours__cursus',
-            ).get(pk=pk)
+            return CoursDonne.objects.select_related('formateur', 'formateur__user', 'promotion', 'promotion__filiere',
+                                                     'cours', 'cours__cours', 'cours__cursus').get(pk=pk)
         except CoursDonne.DoesNotExist:
             return None
 
@@ -396,7 +285,6 @@ class CoursDonneDetailView(APIView):
         cours_donne = self.get_object(pk)
         if cours_donne is None:
             return Response({"message": "Séance introuvable."}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = CoursDonneSerializer(cours_donne, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -407,12 +295,9 @@ class CoursDonneDetailView(APIView):
         cours_donne = self.get_object(pk)
         if cours_donne is None:
             return Response({"message": "Séance introuvable."}, status=status.HTTP_404_NOT_FOUND)
-
         cours_donne.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-# --- Administration des utilisateurs ---
 
 class AdminUsersView(APIView):
     permission_classes = [IsAdminUserRole]
@@ -432,7 +317,6 @@ class AdminUsersView(APIView):
 
 
 class AdminUserDetailView(APIView):
-
     permission_classes = [IsAdminUserRole]
 
     def get_object(self, pk):
@@ -452,7 +336,6 @@ class AdminUserDetailView(APIView):
         user = self.get_object(pk)
         if user is None:
             return Response({"message": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = AdminUserManagementSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -463,15 +346,24 @@ class AdminUserDetailView(APIView):
         user = self.get_object(pk)
         if user is None:
             return Response({"message": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
-
         if user == request.user:
-            return Response(
-                {"message": "Vous ne pouvez pas supprimer votre propre compte."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"message": "Vous ne pouvez pas supprimer votre propre compte."},
+                            status=status.HTTP_400_BAD_REQUEST)
         user.delete()
-        return Response(
-            {"message": "Utilisateur supprimé avec succès."},
-            status=status.HTTP_204_NO_CONTENT
-        )
+        return Response({"message": "Utilisateur supprimé avec succès."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class FormateurCoursesMeView(APIView):
+    permission_classes = [IsFormateurRole]
+
+    def get(self, request):
+        try:
+            formateur_profile = request.user.formateur_profile
+        except FormateurProfile.DoesNotExist:
+            return Response({"message": "Profil formateur introuvable pour cet utilisateur."},
+                            status=status.HTTP_404_NOT_FOUND)
+        cours = CoursDonne.objects.filter(formateur=formateur_profile).select_related('cours__cours',
+                                                                                      'promotion__filiere').order_by(
+            'date_debut')
+        serializer = FormateurCourseSerializer(cours, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

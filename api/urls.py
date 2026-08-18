@@ -1,9 +1,10 @@
 from django.urls import path
 
-from api.models import Cursus
-from api.views import LoginView, MeView, DumpAllDataView, ElevesView, EleveDetailView, FilieresView, FiliereDetailView, \
-    CursusView, CursusDetailView, PromotionsView, PromotionDetailView, UserProfileView, AdminUsersView, \
-    AdminUserDetailView, CoursDonneView, CoursDonneDetailView, FormateursView
+from api.views import (LoginView, MeView, DumpAllDataView, ElevesView, EleveDetailView,
+                       FilieresView, FiliereDetailView, CursusView, CursusDetailView, PromotionsView,
+                       PromotionDetailView, UserProfileView, AdminUsersView, AdminUserDetailView,
+                       FormateurCoursesMeView, CoursDonneView, CoursDonneDetailView, FormateursView,
+                       PromotionElevesView)
 
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
@@ -18,9 +19,11 @@ urlpatterns = [
     path('promotions/', PromotionsView.as_view()),
     path('profile/me/', UserProfileView.as_view(), name='profile-me'),
     path('promotions/<int:pk>/', PromotionDetailView.as_view()),
+    path('promotions/<int:pk>/eleves/', PromotionElevesView.as_view(), name='promotion-eleves'),
     path('admin/users/', AdminUsersView.as_view(), name='admin-users'),
     path('admin/users/<int:pk>/', AdminUserDetailView.as_view(), name='admin-user-detail'),
     path('cours-donnes/', CoursDonneView.as_view(), name='cours-donnes'),
     path('cours-donnes/<int:pk>/', CoursDonneDetailView.as_view(), name='cours-donne-detail'),
     path('formateurs/', FormateursView.as_view(), name='formateurs'),
+    path('formateur/courses/me/', FormateurCoursesMeView.as_view(), name='formateur-courses-me'),
 ]
