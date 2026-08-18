@@ -10,15 +10,16 @@ from rest_framework.permissions import IsAuthenticated
 
 from . import serializers
 from .models import Filiere, Cours, Cursus, Promotion, User, CoursDonne
+from .permissions import IsAdminUserRole
 from .serializers import (
     FiliereSerializer, CoursSerializer, CursusSerializer, EleveProfileSerializer,
-    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveSerializer, LoginUserSerializer)
+    PromotionSerializer, UserSerializer, CoursDonneSerializer, EleveSerializer, LoginUserSerializer, AdminUserManagementSerializer)
 
 class DumpAllDataView(APIView):
     """
     Route de TEST : Renvoie TOUTES les données de la base de données.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         data = {
@@ -324,3 +325,65 @@ class PromotionDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminUsersView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def get(self, request):
+        users = User.objects.all().order_by('-date_joined')
+        serializer = AdminUserManagementSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = AdminUserManagementSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            output_serializer = AdminUserManagementSerializer(user)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminUserDetailView(APIView):
+
+    permission_classes = [IsAdminUserRole]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        user = self.get_object(pk)
+        if user is None:
+            return Response({"message": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = AdminUserManagementSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        user = self.get_object(pk)
+        if user is None:
+            return Response({"message": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminUserManagementSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        user = self.get_object(pk)
+        if user is None:
+            return Response({"message": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user == request.user:
+            return Response(
+                {"message": "Vous ne pouvez pas supprimer votre propre compte."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.delete()
+        return Response(
+            {"message": "Utilisateur supprimé avec succès."},
+            status=status.HTTP_204_NO_CONTENT
+        )
