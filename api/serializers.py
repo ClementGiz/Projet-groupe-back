@@ -122,3 +122,57 @@ class LoginUserSerializer(serializers.ModelSerializer):
             'last_name',
             'role',
         ]
+
+
+class AdminUserManagementSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'password',
+            'is_active',
+        ]
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = User.objects.create_user(**validated_data)
+
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+
+        user.save()
+
+        if user.role == User.Role.ELEVE:
+            try:
+                promo_attente = Promotion.objects.get(pk=21)
+            except Promotion.DoesNotExist:
+                promo_attente = Promotion.objects.first()
+
+            if promo_attente:
+                EleveProfile.objects.create(user=user, promotion=promo_attente)
+
+        if user.role == User.Role.FORMATEUR:
+            FormateurProfile.objects.get_or_create(user=user)
+
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
