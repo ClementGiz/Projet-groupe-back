@@ -11,7 +11,7 @@ class FiliereSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CoursSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta:voic
         model = Cours
         fields = '__all__'
 
