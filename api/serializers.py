@@ -23,16 +23,26 @@ class CursusCoursSerializer(serializers.ModelSerializer):
 
 class CursusSerializer(serializers.ModelSerializer):
     filiere = FiliereSerializer(read_only=True)
+    filiere_id = serializers.PrimaryKeyRelatedField(
+        queryset=Filiere.objects.all(), source='filiere', write_only=True
+    )
     cursus_cours = CursusCoursSerializer(many=True, read_only=True)
+
     class Meta:
         model = Cursus
         fields = '__all__'
 
+
 class PromotionSerializer(serializers.ModelSerializer):
     filiere = FiliereSerializer(read_only=True)
+    filiere_id = serializers.PrimaryKeyRelatedField(
+        queryset=Filiere.objects.all(), source='filiere', write_only=True
+    )
+
     class Meta:
         model = Promotion
         fields = '__all__'
+
 
 
 class EleveProfileSerializer(serializers.ModelSerializer):
