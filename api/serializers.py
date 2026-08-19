@@ -46,6 +46,7 @@ class FormateurProfileSerializer(serializers.ModelSerializer):
         model = FormateurProfile
         fields = '__all__'
 
+
 class UserSerializer(serializers.ModelSerializer):
     eleve_profile = EleveProfileSerializer(read_only=True)
     formateur_profile = FormateurProfileSerializer(read_only=True)
