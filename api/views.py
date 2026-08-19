@@ -368,21 +368,18 @@ class FormateurCoursesMeView(APIView):
         serializer = FormateurCourseSerializer(cours, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
- class PlanningView(APIView):
+class PlanningView(APIView):
      permission_classes = [IsAuthenticated]
 
      def get(self, request):
          user = request.user
 
-         # Vérifie si l'utilsateur est un élève et a une promotion assignéé
-
          if user.role == "ELEVE" and hasattr(user, 'eleve_profile') and user.eleve_profile.promotion:
              cours = CoursDonne.objects.filter(
                  promotion=user.eleve_profile.promotion
-             ).select_related('cours__cours', 'formateur__user')
+             ).select_related('cours__cours', 'formateur__user', 'promotion')
 
-             serializer  = CoursDonneSerializer(cours, many=True)
-             return  Response(serializer.data, status=status.HTTP_200_OK)
+             serializer = CoursDonneSerializer(cours, many=True)
+             return Response(serializer.data, status=status.HTTP_200_OK)
 
-         # Retourne une liste vide pour les autre rôle pour l'instant
          return Response([], status=status.HTTP_200_OK)

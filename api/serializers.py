@@ -51,7 +51,13 @@ class EleveProfileSerializer(serializers.ModelSerializer):
         model = EleveProfile
         fields = '__all__'
 
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name','email']
+
 class FormateurProfileSerializer(serializers.ModelSerializer):
+    user = SimpleUserSerializer(serializers.ModelSerializer)
     class Meta:
         model = FormateurProfile
         fields = '__all__'
