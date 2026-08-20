@@ -4,7 +4,7 @@ from api.views import (LoginView, MeView, DumpAllDataView, ElevesView, EleveDeta
                        FilieresView, FiliereDetailView, CursusView, CursusDetailView, PromotionsView,
                        PromotionDetailView, UserProfileView, AdminUsersView, AdminUserDetailView,
                        FormateurCoursesMeView, CoursDonneView, CoursDonneDetailView, FormateursView,
-                       PromotionElevesView)
+                       PromotionElevesView, PlanningView )
 
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
@@ -26,4 +26,5 @@ urlpatterns = [
     path('cours-donnes/<int:pk>/', CoursDonneDetailView.as_view(), name='cours-donne-detail'),
     path('formateurs/', FormateursView.as_view(), name='formateurs'),
     path('formateur/courses/me/', FormateurCoursesMeView.as_view(), name='formateur-courses-me'),
+    path('planning/me/', PlanningView.as_view(), name='planing-me'),
 ]

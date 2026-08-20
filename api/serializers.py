@@ -51,23 +51,33 @@ class EleveProfileSerializer(serializers.ModelSerializer):
         model = EleveProfile
         fields = '__all__'
 
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name','email']
+
 class FormateurProfileSerializer(serializers.ModelSerializer):
+    user = SimpleUserSerializer(serializers.ModelSerializer)
     class Meta:
         model = FormateurProfile
         fields = '__all__'
+
 
 class UserSerializer(serializers.ModelSerializer):
     eleve_profile = EleveProfileSerializer(read_only=True)
     formateur_profile = FormateurProfileSerializer(read_only=True)
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'eleve_profile', 'formateur_profile']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'eleve_profile', 'formateur_profile', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False}
+        }
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if password:
+        if password and password.strip():
             instance.set_password(password)
         instance.save()
         return instance
