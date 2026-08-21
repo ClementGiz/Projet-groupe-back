@@ -140,6 +140,12 @@ class EleveSerializer(serializers.ModelSerializer):
 
 class AdminUserManagementSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    promotion_id = serializers.PrimaryKeyRelatedField(
+        queryset=Promotion.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
 
     class Meta:
         model = User
@@ -153,26 +159,42 @@ class AdminUserManagementSerializer(serializers.ModelSerializer):
             'is_active',
             'date_joined',
             'password',
+            'promotion_id',
         ]
         read_only_fields = ['id', 'date_joined']
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
+        promotion = validated_data.pop('promotion_id', None)
+
         user = User(**validated_data)
         if password:
             user.set_password(password)
         else:
             user.set_unusable_password()
         user.save()
+
+        if user.role == User.Role.ELEVE and promotion:
+            EleveProfile.objects.create(user=user, promotion=promotion)
+        elif user.role == User.Role.FORMATEUR:
+            FormateurProfile.objects.get_or_create(user=user)
+
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
+        promotion = validated_data.pop('promotion_id', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
         if password:
             instance.set_password(password)
         instance.save()
+
+        if instance.role == User.Role.ELEVE and promotion:
+            EleveProfile.objects.update_or_create(user=instance, defaults={'promotion': promotion})
+
         return instance
 
 
