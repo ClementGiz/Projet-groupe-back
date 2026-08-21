@@ -1,4 +1,5 @@
 import status
+from django.db.migrations import serializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -68,6 +69,14 @@ class MeView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # Ajout de la méthode patch
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EleveDetailView(APIView):
@@ -367,3 +376,19 @@ class FormateurCoursesMeView(APIView):
             'date_debut')
         serializer = FormateurCourseSerializer(cours, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class PlanningView(APIView):
+     permission_classes = [IsAuthenticated]
+
+     def get(self, request):
+         user = request.user
+
+         if user.role == "ELEVE" and hasattr(user, 'eleve_profile') and user.eleve_profile.promotion:
+             cours = CoursDonne.objects.filter(
+                 promotion=user.eleve_profile.promotion
+             ).select_related('cours__cours', 'formateur__user', 'promotion')
+
+             serializer = CoursDonneSerializer(cours, many=True)
+             return Response(serializer.data, status=status.HTTP_200_OK)
+
+         return Response([], status=status.HTTP_200_OK)

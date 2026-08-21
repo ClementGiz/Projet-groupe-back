@@ -87,20 +87,33 @@ WSGI_APPLICATION = 'projet_full_stack_back.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DATABASE_ENGINE', 'django.db.backends.mysql'),
-        'NAME': os.getenv('DATABASE_NAME','projet_back'),
-        'USER': os.getenv('DATABASE_USER','root'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD','1234'),
-        'HOST': os.getenv('DATABASE_HOST','localhost'),
-        'PORT': os.getenv('DATABASE_PORT','3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
+# Moteur défini par .env ou par défaut MySQL
+DB_ENGINE = os.getenv('DATABASE_ENGINE', 'django.db.backends.mysql').strip()
+
+if 'sqlite' in DB_ENGINE:
+    # Configuration SQLite stricte (SANS aucun dictionnaire OPTIONS)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # Configuration MySQL pour tes collaborateurs
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.getenv('DATABASE_NAME', 'projet_back'),
+            'USER': os.getenv('DATABASE_USER', 'root'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', '1234'),
+            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+            'PORT': os.getenv('DATABASE_PORT', '3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 
 # Password validation
